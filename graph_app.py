@@ -20,8 +20,8 @@ class GraphApp:
 		self.clicks = 0
 		self.tol = 1e-1
 		self.near = 0
-		self.G = nx.Graph()	
-		self.A = []
+		self.G = nx.Graph()
+		self.i = 0
 
 	def onClick(self, event):
 		"""
@@ -40,15 +40,14 @@ class GraphApp:
 		"""
 		self.near, self.x_coord, self.y_coord = self.distance(event.xdata, event.ydata)
 		if self.near == 0:
-			print self.G.nodes(), len(self.vert_x)	
 			self.clicks = 0
 			self.temp_X = []
 			self.temp_Y = []
 			self.vert_x.append(event.xdata)
 			self.vert_y.append(event.ydata) # Dot ready for drawing.
 			self.r.append(100)
-			self.G.add_node(len(self.vert_x)) # Add a node to the graph
-			print self.G.nodes(), len(self.vert_x)
+			self.G.add_node(self.i) # Add a node to the graph
+			self.i += 1
 		else: # then the click is close
 			if self.clicks == 1: # Then we will draw a line
 				self.clicks = 0
@@ -60,9 +59,6 @@ class GraphApp:
 				self.G.add_edge(*e)
 				self.temp_X = []
 				self.temp_Y = []
-				self.A = nx.adjacency_matrix(self.G)
-				print(self.A.todense())
-				print(type(self.A.todense()))
 			else: # Just add a  dot to the list  
 				self.clicks = 1
 				self.temp_X.append(self.x_coord) # by value or by reference?
@@ -71,6 +67,8 @@ class GraphApp:
 		for j in range(len(self.edge_X)):
 			plt.plot(self.edge_X[j], self.edge_Y[j], 'b')
 		self.fig.canvas.draw()
+		A = nx.adjacency_matrix(self.G)
+		print(A.todense())
 
 	def distance(self, x, y):
 		"""Check all of the coordinates in the vert_x, vert_y lists. If there is a coordinate near to the input x, y 
