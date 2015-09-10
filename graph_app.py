@@ -21,19 +21,13 @@ import Tkinter as Tk
 mpl.rcParams['toolbar'] = 'None'
 
 class GraphApp:
-	def __init__(self):	
-		self.root = Tk.Tk()
-		self.fig = Figure(facecolor = 'white')
-		self.ax1 = self.fig.add_subplot('111')
-		self.ax1.set_xlim(0,1)
-		self.ax1.set_ylim(0,1)
-		self.ax1.axis('off')
+	def __init__(self, canvas, ax1):	
+		self.ax = ax1
 		self.vert_x = []
 		self.vert_y = []
-		self.ax1.plot(self.vert_x, self.vert_y)
-		self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
-		self.canvas.show()
+		self.canvas = canvas
 		self.canvas.mpl_connect('button_press_event', self.onClick)
+		self.canvas.show()
 		self.r = []
 		self.c = []
 		self.edge_indices = [] # This stores tuples of the indices of vertices which are connected by an edge.
@@ -89,10 +83,10 @@ class GraphApp:
                         else:
                                 self.c[index] = 99
                 print self.c
-                plt.scatter(self.vert_x,self.vert_y, s= self.r, c=self.c, cmap = mpl.cm.Blues)
+                self.ax.scatter(self.vert_x,self.vert_y, s= self.r, c=self.c, cmap = mpl.cm.Blues)
 		for j in range(len(self.edge_X)):
-			plt.plot(self.edge_X[j], self.edge_Y[j], self.edge_colors[j])
-		self.fig.canvas.draw()
+			self.ax.plot(self.edge_X[j], self.edge_Y[j], self.edge_colors[j])
+		self.canvas.draw()
 		
 	def distance(self, x, y):
 		"""Check all of the coordinates in the vert_x, vert_y lists. If there is a coordinate near to the input x, y 
@@ -104,4 +98,20 @@ class GraphApp:
 
 	
 if __name__ == '__main__':
-	cp = GraphApp()
+	root = Tk.Tk()
+	fig = Figure(facecolor = 'white')
+	ax1 = fig.add_subplot('111')
+	ax1.set_xlim(0,1)
+	ax1.set_ylim(0,1)
+	ax1.axis('off')
+	canvas = FigureCanvasTkAgg(fig, master=root)
+	cp = GraphApp(canvas, ax1)
+	canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
+	def _quit():
+		root.quit()     # stops mainloop
+		root.destroy()  # this is necessary on Windows to prevent
+                    # Fatal Python Error: PyEval_RestoreThread: NULL tstate
+
+	button = Tk.Button(master=root, text='Quit', command=_quit)
+	button.pack(side=Tk.BOTTOM)
+	Tk.mainloop()
