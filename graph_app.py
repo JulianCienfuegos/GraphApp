@@ -7,11 +7,12 @@
 
 import matplotlib as mpl
 import numpy as np
+import numpy.linalg as la
 import networkx as nx
 import random
 import sys
 import math
-
+import time
 
 mpl.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
@@ -20,6 +21,25 @@ from matplotlib.figure import Figure
 import Tkinter as Tk
 
 mpl.rcParams['toolbar'] = 'None'
+
+color_map = {'b' : 1,
+			 'g' : 2,
+			 'r' : 3,
+			 'c' : 4,
+			 'm' : 5,
+			 'y' : 6, 
+			 'k' : 7,
+			 'w' : 8}
+
+reverse_map = {1 : 'b',
+			   2 : 'g',
+			   3 : 'r',
+			   4 : 'c',
+			   5 : 'm',
+			   6 : 'y',
+			   7 : 'k',
+			   8 : 'w'}
+edge_color = 'k'
 
 class GraphApp:
 	def __init__(self, canvas, fig, ax1):	
@@ -33,6 +53,14 @@ class GraphApp:
 		self.near = 0
 		self.num_verts = 0
 		self.G = nx.Graph()
+	
+	@property
+	def adj_mat(self):
+		self.A = nx.to_numpy_matrix(self.G)
+		self.A = np.asarray(self.A)
+		for r in self.A:
+			r /= la.norm(r, 1)
+		return self.A
 
 	def onClick(self, event):
 		self.near, self.x_coord, self.y_coord = self.distance(event.xdata, event.ydata)
@@ -43,9 +71,12 @@ class GraphApp:
 			self.vert_x.append(event.xdata)
 			self.vert_y.append(event.ydata) # Dot ready for drawing.
 			self.r.append(200)
-			self.num_verts += 1
-			self.c.append(random.random())
+			col = random.randint(1,8)
+			self.c.append(reverse_map[col])
 			self.G.add_node(self.num_verts)
+			e = (self.num_verts, self.num_verts)
+			self.G.add_edge(*e)
+			self.num_verts += 1
 		else: # then the click is close
 			if self.clicks == 1 and self.temp_X != [] and self.temp_X[0] == self.x_coord and self.temp_Y[0] == self.y_coord:
 				self.clicks = 0
@@ -101,18 +132,19 @@ class GraphApp:
 		self.temp_Y = []
 
 	def color_iteration(self):
-		pass
+		c_nums = [color_map[c] for c in self.c]
+		c_vec = np.dot(self.adj_mat, c_nums)
+		self.c = [reverse_map[math.floor(i)] for i in c_vec]
+		self.draw_plot()
 
 	def draw_plot(self):
 		''' This should be sped up because it takes a very long time when there are ten or so vertices.'''
 		for index in range(self.num_verts):
-			self.ax.scatter(self.vert_x,self.vert_y, s= self.r, c=self.c)
+			self.ax.scatter(self.vert_x,self.vert_y, s= self.r, c=self.c, cmap='hsv')
 		for j in range(len(self.edge_X)):
-			self.ax.plot(self.edge_X[j], self.edge_Y[j])
+			self.ax.plot(self.edge_X[j], self.edge_Y[j], c = edge_color)
 		self.canvas.draw()
-	def print_adj_mat(self):
-		self.A = nx.adjacency_matrix(self.G)
-		print(self.A.todense())
+
 	# We need to define a little arithmetic for working with color names, because the color numbers aren't working correctly.
 
 if __name__ == '__main__':
@@ -128,7 +160,9 @@ if __name__ == '__main__':
 	canvas.get_tk_widget().pack(side=Tk.LEFT, fill=Tk.BOTH, expand=1)
 
 	def _update_colors():
-		cp.color_iteration()
+		for i in range(15):
+			cp.color_iteration()
+			time.sleep(1.0)
 
 	def _quit():
 		root.quit()     
@@ -138,7 +172,7 @@ if __name__ == '__main__':
 		cp.clear_plot()
 
 	def _view_adj():
-		cp.print_adj_mat()
+		print(cp.adj_mat)
 
 	button = Tk.Button(master=root, text='Run', command=_update_colors, height = 10, width = 10)
 	button.pack(side=Tk.TOP)
